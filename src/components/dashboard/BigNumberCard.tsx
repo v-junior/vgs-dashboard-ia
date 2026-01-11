@@ -1,73 +1,51 @@
-import { TrendingUp, TrendingDown } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatNumber } from '@/lib/formatters';
-import type { BigNumberWidget } from '@/types/dashboard';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowDown, ArrowUp, Minus } from "lucide-react";
+import { extractWidgetData } from "@/lib/utils"; // Importe a função que criamos
 
-interface BigNumberCardProps {
-  widget: BigNumberWidget;
+interface BigNumberWidgetProps {
+  widget: any;
 }
 
-export function BigNumberCard({ widget }: BigNumberCardProps) {
-  const { title, big_number, variations, suffix, format } = widget;
+export function BigNumberWidget({ widget }: BigNumberWidgetProps) {
+  //Usar a função para pegar os dados certos
+  const rawData = extractWidgetData(widget.data);
+  const currentData = rawData[0] || {}; // Pega o primeiro item do array
+
+  const value = currentData.big_number;
   
-  const formattedValue = formatNumber(big_number, format);
-  const displayValue = suffix ? `${formattedValue}${suffix}` : formattedValue;
+  // Lógica para variação (setinha verde/vermelha)
+  const variation = currentData.variations?.month;
+  const isPositive = variation?.type === "up";
+  const hasVariation = variation?.value !== undefined && variation?.value !== null;
+
+  // Formatação do número (se for % coloca no fim)
+  const formattedValue = typeof value === 'number' 
+    ? value.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) 
+    : '-';
+    
+  const suffix = widget.config?.bigNumber?.suffix || '';
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground line-clamp-2">
-          {title}
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">
+          {widget.config?.title?.text || widget.name}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <p className="text-2xl font-bold text-foreground">{displayValue}</p>
+      <CardContent>
+        <div className="text-2xl font-bold">
+          {formattedValue}{suffix}
+        </div>
         
-        {variations && (
-          <div className="flex flex-wrap gap-3 text-xs">
-            {variations.month && (
-              <VariationBadge 
-                label="Mês" 
-                type={variations.month.type} 
-                value={variations.month.value} 
-              />
-            )}
-            {variations.year && (
-              <VariationBadge 
-                label="Ano" 
-                type={variations.year.type} 
-                value={variations.year.value} 
-              />
-            )}
-          </div>
+        {hasVariation && (
+          <p className={`text-xs flex items-center mt-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            {isPositive ? <ArrowUp className="h-4 w-4 mr-1" /> : <ArrowDown className="h-4 w-4 mr-1" />}
+            {Math.abs(variation.value)}%
+            <span className="text-muted-foreground ml-1">mês anterior</span>
+          </p>
         )}
+        {!hasVariation && <p className="text-xs text-muted-foreground mt-1">-</p>}
       </CardContent>
     </Card>
-  );
-}
-
-interface VariationBadgeProps {
-  label: string;
-  type: 'up' | 'down';
-  value: string;
-}
-
-function VariationBadge({ label, type, value }: VariationBadgeProps) {
-  const isUp = type === 'up';
-  
-  return (
-    <div className={cn(
-      'flex items-center gap-1 rounded-full px-2 py-0.5',
-      isUp ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-    )}>
-      {isUp ? (
-        <TrendingUp className="h-3 w-3" />
-      ) : (
-        <TrendingDown className="h-3 w-3" />
-      )}
-      <span className="font-medium">{value}</span>
-      <span className="text-muted-foreground">({label})</span>
-    </div>
   );
 }
