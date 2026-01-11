@@ -73,4 +73,68 @@ export function LineChartWidget({ widget }: LineChartWidgetProps) {
                   try {
                     const d = new Date(val);
                     if(!isNaN(d.getTime()) && typeof val !== 'number') {
-                        return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit
+                        return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+                    }
+                    return val;
+                  } catch (e) { return val; }
+                }}
+              />
+              
+              <YAxis tick={{ fontSize: 12 }} />
+              
+              <Tooltip 
+                cursor={{ fill: 'transparent' }}
+                contentStyle={{ borderRadius: '8px' }}
+              />
+              
+              <Legend />
+              
+              {yFields.map((field, index) => {
+                const color = COLORS[index % COLORS.length];
+                
+                if (isBar) {
+                  return (
+                    <Bar key={field} dataKey={field} fill={color} name={widget.config?.yAxis?.label || field} radius={[4, 4, 0, 0]}>
+                       {data.map((entry: any, i: number) => (
+                          <Cell key={`cell-${i}`} fill={entry[xField] ? getColorForScore(entry[xField]) : color} />
+                       ))}
+                    </Bar>
+                  );
+                }
+                
+                const SeriesComponent = isArea ? Area : Line;
+                return (
+                  <SeriesComponent 
+                    key={field} 
+                    type="monotone" 
+                    dataKey={field} 
+                    stroke={color} 
+                    fill={isArea ? color : undefined} 
+                    fillOpacity={isArea ? 0.3 : 1} 
+                    strokeWidth={2} 
+                    dot={false}
+                    name={field} 
+                  />
+                );
+              })}
+            </ChartComponent>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full items-center justify-center text-muted-foreground">
+            Aguardando dados...
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function getColorForScore(score: number | string) {
+  const s = Number(score);
+  if (s === 1) return '#ef4444'; 
+  if (s === 2) return '#f97316'; 
+  if (s === 3) return '#eab308'; 
+  if (s === 4) return '#84cc16'; 
+  if (s === 5) return '#22c55e'; 
+  return '#09738a';
+}
