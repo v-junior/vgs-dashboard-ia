@@ -11,17 +11,19 @@ const Index = () => {
   const [widgets, setWidgets] = useState<DashboardWidget[] | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
 
-  const handleFileLoad = (newWidgets: any[]) => {
-    if (!newWidgets || newWidgets.length === 0) {
+  const handleFileLoad = (loadedFiles: any[]) => {
+    if (!loadedFiles || loadedFiles.length === 0) {
       toast.error("Nenhum dado válido encontrado.");
       return;
     }
 
-    // O segredo: .flat() resolve tanto arrays de arrays quanto arrays de objetos misturados
-    const flatWidgets = newWidgets.flat().filter(w => w && (w.kind || w.type));
+    
+    const flatWidgets = loadedFiles.flatMap(item => 
+      Array.isArray(item) ? item : [item]
+    ).filter(w => w && (w.kind || w.type));
     
     if (flatWidgets.length === 0) {
-      toast.error("O arquivo não contém widgets válidos (falta 'kind' ou 'type').");
+      toast.error("Os arquivos não contêm widgets válidos.");
       return;
     }
 
@@ -42,20 +44,16 @@ const Index = () => {
           onAnalysisComplete={handleAnalysisComplete} 
         />
 
+        {/* Upload sempre visível */}
         <div className="print:hidden">
             <FileUpload onFileLoad={handleFileLoad} />
         </div>
 
         {aiAnalysis && <AIInsights content={aiAnalysis} />}
 
-        {widgets && widgets.length > 0 ? (
+        {}
+        {widgets && widgets.length > 0 && (
           <DashboardGrid widgets={widgets} />
-        ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-lg bg-muted/30">
-            <p className="text-lg text-muted-foreground">
-              Arraste arquivos JSON para começar (Suporta múltiplos arquivos)
-            </p>
-          </div>
         )}
       </div>
       <Toaster />
