@@ -9,7 +9,7 @@ interface DashboardGridProps {
 export function DashboardGrid({ widgets }: DashboardGridProps) {
   // Separate widgets by type for better layout
   const bigNumbers = widgets.filter(w => w.kind === 'big_number');
-  const charts = widgets.filter(w => ['line', 'area', 'pie', 'donut'].includes(w.kind));
+  const charts = widgets.filter(w => ['line', 'area', 'bar', 'pie', 'donut'].includes(w.kind));
   const tables = widgets.filter(w => w.kind === 'table');
 
   return (
