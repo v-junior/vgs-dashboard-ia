@@ -3,6 +3,7 @@ import { BigNumberWidget } from './BigNumberCard';
 import { TableWidget } from './DataTableWidget';
 import { LineChartWidget } from './LineChartWidget';
 import { PieChartWidget } from './PieChartWidget';
+import { BarChartWidget } from './BarChartWidget'; 
 
 interface WidgetRendererProps {
   widget: DashboardWidget;
@@ -10,14 +11,17 @@ interface WidgetRendererProps {
 
 export function WidgetRenderer({ widget }: WidgetRendererProps) {
   const renderWidget = () => {
-    switch (widget.kind) {
+    const kind = widget.kind || widget.config?.kind;
+
+    switch (kind) {
       case 'big_number':
         return <BigNumberWidget widget={widget} />;
       
-      // ADICIONADO: 'bar' agora usa o LineChartWidget
+      case 'bar':
+        return <BarChartWidget widget={widget} />;
+
       case 'line':
       case 'area':
-      case 'bar': 
         return <LineChartWidget widget={widget} />;
       
       case 'pie':
@@ -28,7 +32,7 @@ export function WidgetRenderer({ widget }: WidgetRendererProps) {
         return <TableWidget widget={widget} />;
         
       default:
-        console.warn(`Unknown widget kind: ${(widget as any).kind}`);
+        console.warn(`Unknown widget kind: ${kind}`);
         return null;
     }
   };
