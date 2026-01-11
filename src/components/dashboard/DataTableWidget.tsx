@@ -1,5 +1,3 @@
-import { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -7,98 +5,60 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { formatNumber, getDataFromWidget } from '@/lib/formatters';
-import type { TableWidget, TableDataRow, YAxisConfig } from '@/types/dashboard';
-import { ScrollArea } from '@/components/ui/scroll-area';
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { extractWidgetData } from "@/lib/utils";
 
-interface DataTableWidgetProps {
-  widget: TableWidget;
+interface TableWidgetProps {
+  widget: any;
 }
 
-export function DataTableWidget({ widget }: DataTableWidgetProps) {
-  const { title, config } = widget;
+export function TableWidget({ widget }: TableWidgetProps) {
+  // 1. Pegar os dados brutos corrigidos
+  const rows = extractWidgetData(widget.data);
   
-  const rawData = useMemo(() => {
-    return getDataFromWidget(widget.data) as TableDataRow[];
-  }, [widget.data]);
+  // 2. Definir as colunas baseadas na configuração do JSON (yAxis)
+  const columnsConfig = widget.config?.yAxis || [];
 
-  const headers = useMemo(() => {
-    if (!config?.yAxis) return [];
-    return Object.entries(config.yAxis).map(([field, cfg]) => ({
-      field,
-      label: cfg.label,
-      format: cfg.format,
-      suffix: cfg.suffix,
-    }));
-  }, [config?.yAxis]);
-
-  const tableRows = useMemo(() => {
-    return rawData.map((row, rowIndex) => {
-      const cells: Record<string, string | number | null> = {};
-      
-      if (row.columns) {
-        row.columns.forEach((col) => {
-          cells[col.field] = col.value;
-        });
-      }
-      
-      return { id: rowIndex, cells };
-    });
-  }, [rawData]);
-
-  const formatCellValue = (
-    value: string | number | null, 
-    format?: string, 
-    suffix?: string
-  ): string => {
-    if (value === null || value === undefined) return '-';
+  // Função auxiliar para encontrar o valor dentro do array 'columns' de cada linha
+  const getCellContent = (row: any, fieldKey: string) => {
+    if (!row.columns) return "-";
+    // Procura o objeto onde 'field' é igual à coluna que queremos
+    const columnData = row.columns.find((c: any) => c.field === fieldKey);
     
-    const formatted = formatNumber(value, format);
-    return suffix ? `${formatted}${suffix}` : formatted;
+    if (!columnData || columnData.value === null) return "-";
+    
+    // Formata se for número
+    if (typeof columnData.value === 'number') {
+       return columnData.value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+    }
+    return columnData.value;
   };
 
-  if (headers.length === 0 || tableRows.length === 0) {
-    return (
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">Sem dados disponíveis</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium">{title}</CardTitle>
+    <Card className="col-span-full">
+      <CardHeader>
+        <CardTitle>{widget.config?.title?.text || widget.name}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="w-full">
-          <div className="min-w-[400px]">
+        {rows.length > 0 ? (
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  {headers.map((header) => (
-                    <TableHead key={header.field} className="whitespace-nowrap">
-                      {header.label}
-                    </TableHead>
+                  {columnsConfig.map((col: any, index: number) => (
+                    <TableHead key={index}>{col.label || col.field}</TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tableRows.map((row) => (
-                  <TableRow key={row.id}>
-                    {headers.map((header) => (
-                      <TableCell key={`${row.id}-${header.field}`} className="whitespace-nowrap">
-                        {formatCellValue(
-                          row.cells[header.field],
-                          header.format,
-                          header.suffix
-                        )}
+                {rows.map((row: any, rowIndex: number) => (
+                  <TableRow key={rowIndex}>
+                    {columnsConfig.map((col: any, colIndex: number) => (
+                      <TableCell key={colIndex}>
+                        {getCellContent(row, col.field)}
+                        {/* Adiciona % se o config pedir */}
+                        {col.suffix ? col.suffix : ''} 
                       </TableCell>
                     ))}
                   </TableRow>
@@ -106,7 +66,9 @@ export function DataTableWidget({ widget }: DataTableWidgetProps) {
               </TableBody>
             </Table>
           </div>
-        </ScrollArea>
+        ) : (
+          <div className="text-center py-4 text-muted-foreground">Sem dados disponíveis</div>
+        )}
       </CardContent>
     </Card>
   );
