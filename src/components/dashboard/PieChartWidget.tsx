@@ -1,106 +1,71 @@
 import { useMemo } from 'react';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Legend,
-  Tooltip,
-} from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatNumber } from '@/lib/formatters';
-import { extractWidgetData } from '@/lib/utils'; // <--- IMPORTANTE
-import type { PieWidget } from '@/types/dashboard';
+import { extractWidgetData } from '@/lib/utils';
 
 interface PieChartWidgetProps {
-  widget: PieWidget;
+  widget: any;
 }
 
-const DEFAULT_COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  'hsl(var(--chart-6))',
-];
+const COLORS = ['#09738a', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'];
+
+function getColorForScore(score: number | string) {
+  const s = Number(score);
+  if (s === 1) return '#ef4444'; 
+  if (s === 2) return '#f97316'; 
+  if (s === 3) return '#eab308'; 
+  if (s === 4) return '#84cc16'; 
+  if (s === 5) return '#22c55e'; 
+  return null;
+}
 
 export function PieChartWidget({ widget }: PieChartWidgetProps) {
-  const { title, colors, kind } = widget;
-  const isDonut = kind === 'donut' || widget.config?.kind === 'donut';
+  const data = useMemo(() => {
+    return extractWidgetData(widget.data);
+  }, [widget.data]);
 
-  // Lógica robusta para descobrir quais campos usar (seu JSON usa xField/yField)
-  const categoryField = widget.config?.categoryField || widget.xField || widget.labelField || 'name';
-  const valueField = widget.config?.angleField || widget.yField || widget.valueField || 'value';
-
-  const chartData = useMemo(() => {
-    // CORREÇÃO: Usando extractWidgetData
-    const rawData = extractWidgetData(widget.data) as Record<string, unknown>[];
-    
-    if (!rawData || !Array.isArray(rawData)) return [];
-
-    return rawData.map((item) => ({
-      name: String(item[categoryField] || ''),
-      value: Number(item[valueField] || 0),
-    })).filter(item => item.value > 0); // Filtra valores zerados para não quebrar o gráfico
-  }, [widget.data, categoryField, valueField]);
-
-  // Tenta mapear cores customizadas do config se existirem
-  const getColor = (index: number, name: string) => {
-    if (widget.config?.color?.mapping && widget.config.color.mapping[name]) {
-        return widget.config.color.mapping[name];
-    }
-    return (colors || DEFAULT_COLORS)[index % (colors || DEFAULT_COLORS).length];
-  };
+  const dataKey = widget.config?.angleField || widget.yField || 'value';
+  const nameKey = widget.config?.categoryField || widget.xField || 'name';
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium">{title}</CardTitle>
+    <Card className="col-span-1 min-h-[400px]">
+      <CardHeader>
+        <CardTitle>{widget.config?.title?.text || widget.name}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px] w-full">
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={isDonut ? 60 : 0}
-                  outerRadius={100}
-                  paddingAngle={2}
-                  dataKey="value"
-                  nameKey="name"
-                  label={({ name, percent }) => percent > 0.05 ? `${name} (${(percent * 100).toFixed(0)}%)` : ''}
-                  labelLine={false}
-                >
-                  {chartData.map((entry, index) => (
+      <CardContent className="h-[350px]">
+        {data && data.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                paddingAngle={2}
+                dataKey={dataKey}
+                nameKey={nameKey}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              >
+                {data.map((entry: any, index: number) => {
+                  const scoreColor = getColorForScore(entry[nameKey]);
+                  return (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={getColor(index, entry.name)} 
+                      fill={scoreColor || COLORS[index % COLORS.length]} 
                     />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                  formatter={(value: number) => [formatNumber(value), 'Total']}
-                />
-                <Legend 
-                  wrapperStyle={{ paddingTop: '10px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex h-full items-center justify-center text-muted-foreground">
-               Sem dados disponíveis
-            </div>
-          )}
-        </div>
+                  );
+                })}
+              </Pie>
+              <Tooltip formatter={(value: number) => [value, "Total"]} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full items-center justify-center text-muted-foreground">
+             Aguardando dados...
+          </div>
+        )}
       </CardContent>
     </Card>
   );
