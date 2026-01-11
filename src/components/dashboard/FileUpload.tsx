@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Upload, FileJson, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileJson, CheckCircle, AlertCircle, Files } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FileUploadProps {
@@ -11,35 +11,54 @@ type UploadStatus = 'idle' | 'success' | 'error';
 export function FileUpload({ onFileLoad }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [status, setStatus] = useState<UploadStatus>('idle');
-  const [fileName, setFileName] = useState<string>('');
+  const [message, setMessage] = useState<string>('');
 
-  const handleFile = useCallback((file: File) => {
-    if (!file.name.endsWith('.json')) {
+  // Processa múltiplos arquivos
+  const processFiles = useCallback(async (files: FileList | File[]) => {
+    const jsonFiles = Array.from(files).filter(f => f.name.endsWith('.json'));
+
+    if (jsonFiles.length === 0) {
       setStatus('error');
-      setFileName('Arquivo deve ser JSON');
+      setMessage('Nenhum arquivo JSON válido encontrado');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const data = JSON.parse(content);
-        
-        if (!Array.isArray(data)) {
-          throw new Error('JSON deve ser uma lista de widgets');
-        }
-        
-        setStatus('success');
-        setFileName(file.name);
-        onFileLoad(data);
-      } catch (error) {
-        setStatus('error');
-        setFileName('Erro ao processar JSON');
-        console.error('Error parsing JSON:', error);
+    try {
+      const filePromises = jsonFiles.map(file => {
+        return new Promise<any>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const content = e.target?.result as string;
+              const json = JSON.parse(content);
+              resolve(json);
+            } catch (err) {
+              console.warn(`Erro ao ler ${file.name}`, err);
+              resolve(null); // Resolve como null para não quebrar os outros
+            }
+          };
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
+      });
+
+      const results = await Promise.all(filePromises);
+      // Remove falhas (null)
+      const validData = results.filter(item => item !== null);
+
+      if (validData.length === 0) {
+        throw new Error('Falha ao processar arquivos');
       }
-    };
-    reader.readAsText(file);
+
+      setStatus('success');
+      setMessage(`${validData.length} arquivo(s) processado(s)`);
+      onFileLoad(validData);
+
+    } catch (error) {
+      setStatus('error');
+      setMessage('Erro ao processar arquivos');
+      console.error(error);
+    }
   }, [onFileLoad]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -55,25 +74,24 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleFile(file);
+    if (e.dataTransfer.files?.length) {
+      processFiles(e.dataTransfer.files);
     }
-  }, [handleFile]);
+  }, [processFiles]);
 
   const handleClick = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
+    input.multiple = true; // Permite selecionar vários na janela
     input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        handleFile(file);
+      const files = (e.target as HTMLInputElement).files;
+      if (files?.length) {
+        processFiles(files);
       }
     };
     input.click();
-  }, [handleFile]);
+  }, [processFiles]);
 
   return (
     <div
@@ -102,7 +120,7 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
         ) : status === 'error' ? (
           <AlertCircle className="h-8 w-8" />
         ) : isDragging ? (
-          <FileJson className="h-8 w-8" />
+          <Files className="h-8 w-8" />
         ) : (
           <Upload className="h-8 w-8" />
         )}
@@ -111,21 +129,21 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
       <div className="text-center">
         {status === 'success' ? (
           <>
-            <p className="font-medium text-success">Arquivo carregado!</p>
-            <p className="text-sm text-muted-foreground">{fileName}</p>
+            <p className="font-medium text-success">Sucesso!</p>
+            <p className="text-sm text-muted-foreground">{message}</p>
           </>
         ) : status === 'error' ? (
           <>
-            <p className="font-medium text-destructive">Erro no upload</p>
-            <p className="text-sm text-muted-foreground">{fileName}</p>
+            <p className="font-medium text-destructive">Erro</p>
+            <p className="text-sm text-muted-foreground">{message}</p>
           </>
         ) : (
           <>
             <p className="font-medium text-foreground">
-              {isDragging ? 'Solte o arquivo aqui' : 'Arraste um arquivo JSON'}
+              {isDragging ? 'Solte os arquivos aqui' : 'Arraste múltiplos arquivos JSON'}
             </p>
             <p className="text-sm text-muted-foreground">
-              ou clique para selecionar
+              ou clique para selecionar (Ctrl+Click)
             </p>
           </>
         )}
