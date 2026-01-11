@@ -18,18 +18,22 @@ export function LineChartWidget({ widget }: LineChartWidgetProps) {
   const isBar = kind === 'bar';
   const xField = widget.xField || "date";
 
+  // PREPARAÇÃO DE DADOS ROBUSTA
   const data = useMemo(() => {
     const rawData = extractWidgetData(widget.data);
     
-    if (isBar && rawData) {
+    if (isBar && Array.isArray(rawData)) {
+      // Para gráficos de barra, convertemos o eixo X para String explicitamente.
+      // Isso impede que o Recharts tente criar uma escala linear numérica (que esconde as barras).
       return rawData.map((item: any) => ({
         ...item,
-        [xField]: String(item[xField])
+        [xField]: String(item[xField]) 
       }));
     }
     return rawData;
   }, [widget.data, isBar, xField]);
 
+  // Lógica para encontrar campos Y
   let yFields: string[] = [];
   if (Array.isArray(widget.yField)) {
     yFields = widget.yField;
@@ -65,6 +69,7 @@ export function LineChartWidget({ widget }: LineChartWidgetProps) {
               
               <XAxis 
                 dataKey={xField} 
+                // IMPORTANTE: 'category' é obrigatório para barras de distribuição
                 type="category"
                 scale={isBar ? "band" : "auto"}
                 tick={{ fontSize: 12 }}
@@ -72,7 +77,8 @@ export function LineChartWidget({ widget }: LineChartWidgetProps) {
                   if (isBar) return val;
                   try {
                     const d = new Date(val);
-                    if(!isNaN(d.getTime()) && typeof val !== 'number') {
+                    // Verifica se é data válida e não um número puro
+                    if(!isNaN(d.getTime()) && typeof val !== 'number' && String(val).includes('-')) {
                         return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
                     }
                     return val;
@@ -85,6 +91,7 @@ export function LineChartWidget({ widget }: LineChartWidgetProps) {
               <Tooltip 
                 cursor={{ fill: 'transparent' }}
                 contentStyle={{ borderRadius: '8px' }}
+                labelFormatter={(label) => isBar ? `Nota: ${label}` : label}
               />
               
               <Legend />
