@@ -13,7 +13,6 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
   const [status, setStatus] = useState<UploadStatus>('idle');
   const [message, setMessage] = useState<string>('');
 
-  // Processa múltiplos arquivos
   const processFiles = useCallback(async (files: FileList | File[]) => {
     const jsonFiles = Array.from(files).filter(f => f.name.endsWith('.json'));
 
@@ -24,6 +23,7 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
     }
 
     try {
+      // Lê todos os arquivos em paralelo
       const filePromises = jsonFiles.map(file => {
         return new Promise<any>((resolve, reject) => {
           const reader = new FileReader();
@@ -34,7 +34,7 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
               resolve(json);
             } catch (err) {
               console.warn(`Erro ao ler ${file.name}`, err);
-              resolve(null); // Resolve como null para não quebrar os outros
+              resolve(null); // Ignora arquivos corrompidos
             }
           };
           reader.onerror = reject;
@@ -43,7 +43,6 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
       });
 
       const results = await Promise.all(filePromises);
-      // Remove falhas (null)
       const validData = results.filter(item => item !== null);
 
       if (validData.length === 0) {
@@ -51,7 +50,8 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
       }
 
       setStatus('success');
-      setMessage(`${validData.length} arquivo(s) processado(s)`);
+      setMessage(`${validData.length} arquivo(s) pronto(s)`);
+      // Envia sempre um array contendo os resultados (seja objeto ou lista)
       onFileLoad(validData);
 
     } catch (error) {
@@ -83,7 +83,7 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    input.multiple = true; // Permite selecionar vários na janela
+    input.multiple = true; // Permite seleção múltipla
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files?.length) {
