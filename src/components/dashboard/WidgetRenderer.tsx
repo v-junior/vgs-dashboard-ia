@@ -1,5 +1,4 @@
 import type { DashboardWidget } from '@/types/dashboard';
-// NOTA: Estamos importando os componentes NOVOS (Widget) de dentro dos arquivos (que podem ter nomes antigos)
 import { BigNumberWidget } from './BigNumberCard'; 
 import { TableWidget } from './DataTableWidget';
 import { LineChartWidget } from './LineChartWidget';
@@ -15,8 +14,10 @@ export function WidgetRenderer({ widget }: WidgetRendererProps) {
       case 'big_number':
         return <BigNumberWidget widget={widget} />;
       
+      // ADICIONADO: 'bar' agora usa o LineChartWidget
       case 'line':
       case 'area':
+      case 'bar': 
         return <LineChartWidget widget={widget} />;
       
       case 'pie':
