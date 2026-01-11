@@ -23,7 +23,6 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
     }
 
     try {
-      // Lê todos os arquivos em paralelo
       const filePromises = jsonFiles.map(file => {
         return new Promise<any>((resolve, reject) => {
           const reader = new FileReader();
@@ -34,7 +33,7 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
               resolve(json);
             } catch (err) {
               console.warn(`Erro ao ler ${file.name}`, err);
-              resolve(null); // Ignora arquivos corrompidos
+              resolve(null);
             }
           };
           reader.onerror = reject;
@@ -50,8 +49,7 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
       }
 
       setStatus('success');
-      setMessage(`${validData.length} arquivo(s) pronto(s)`);
-      // Envia sempre um array contendo os resultados (seja objeto ou lista)
+      setMessage(`${validData.length} arquivo(s) processado(s)`);
       onFileLoad(validData);
 
     } catch (error) {
@@ -83,7 +81,7 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    input.multiple = true; // Permite seleção múltipla
+    input.multiple = true;
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files?.length) {
