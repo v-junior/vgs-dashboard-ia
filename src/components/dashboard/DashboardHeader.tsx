@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Bot, Loader2 } from 'lucide-react';
+import { Bot, Loader2, Download } from 'lucide-react'; // Adicionado Download
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+// Se o seu arquivo de tipos estiver em outro lugar, ajuste o import
 import type { AIAnalysisResponse } from '@/types/dashboard';
 
 interface DashboardHeaderProps {
@@ -9,6 +10,7 @@ interface DashboardHeaderProps {
   onAnalysisComplete: (analysis: string) => void;
 }
 
+// URL de produção (ajuste se necessário)
 const WEBHOOK_URL = 'https://edt.digital-ai.tech/webhook-test/analise';
 
 export function DashboardHeader({ data, onAnalysisComplete }: DashboardHeaderProps) {
@@ -33,30 +35,22 @@ export function DashboardHeader({ data, onAnalysisComplete }: DashboardHeaderPro
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ content: JSON.stringify(data) }), // Envelopando para garantir formato
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result: AIAnalysisResponse | string = await response.json();
+      const result = await response.json();
       
-      let analysisText: string;
-      
-      if (typeof result === 'string') {
-        analysisText = result;
-      } else if (result.analise) {
-        analysisText = result.analise;
-      } else if (result.analysis) {
-        analysisText = result.analysis;
-      } else if (result.text) {
-        analysisText = result.text;
-      } else if (result.message) {
-        analysisText = result.message;
-      } else {
-        analysisText = JSON.stringify(result);
-      }
+      // Lógica de fallback para encontrar o texto da IA
+      let analysisText = '';
+      if (typeof result === 'string') analysisText = result;
+      else if (result.analise) analysisText = result.analise;
+      else if (result.output) analysisText = result.output; // N8N comum
+      else if (result.message?.content) analysisText = result.message.content;
+      else analysisText = JSON.stringify(result);
 
       onAnalysisComplete(analysisText);
       
@@ -76,8 +70,13 @@ export function DashboardHeader({ data, onAnalysisComplete }: DashboardHeaderPro
     }
   };
 
+  // DIFERENCIAL: Função de Exportação
+  const handleExport = () => {
+    setTimeout(() => window.print(), 100);
+  };
+
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
       <div>
         <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
           Dashboard de Métricas
@@ -87,24 +86,37 @@ export function DashboardHeader({ data, onAnalysisComplete }: DashboardHeaderPro
         </p>
       </div>
       
-      <Button 
-        onClick={handleAnalyze} 
-        disabled={isAnalyzing || !data}
-        className="gap-2"
-        size="lg"
-      >
-        {isAnalyzing ? (
-          <>
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Analisando...
-          </>
-        ) : (
-          <>
-            <Bot className="h-5 w-5" />
-            🤖 Analisar com IA
-          </>
-        )}
-      </Button>
+      <div className="flex gap-2">
+        {/* Botão de Exportar PDF */}
+        <Button 
+          variant="outline" 
+          onClick={handleExport}
+          disabled={!data}
+          className="gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Exportar PDF
+        </Button>
+
+        <Button 
+          onClick={handleAnalyze} 
+          disabled={isAnalyzing || !data}
+          className="gap-2"
+          size="default"
+        >
+          {isAnalyzing ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Analisando...
+            </>
+          ) : (
+            <>
+              <Bot className="h-4 w-4" />
+              Analisar com IA
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
