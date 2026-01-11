@@ -24,6 +24,7 @@ export function PieChartWidget({ widget }: PieChartWidgetProps) {
     return extractWidgetData(widget.data);
   }, [widget.data]);
 
+  // Mapeamento inteligente de chaves
   const dataKey = widget.config?.angleField || widget.yField || 'value';
   const nameKey = widget.config?.categoryField || widget.xField || 'name';
 
@@ -45,7 +46,9 @@ export function PieChartWidget({ widget }: PieChartWidgetProps) {
                 paddingAngle={2}
                 dataKey={dataKey}
                 nameKey={nameKey}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                // LIMPEZA VISUAL: Label mostra apenas a porcentagem, sem caixas de fundo
+                label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                labelLine={true}
               >
                 {data.map((entry: any, index: number) => {
                   const scoreColor = getColorForScore(entry[nameKey]);
@@ -57,8 +60,20 @@ export function PieChartWidget({ widget }: PieChartWidgetProps) {
                   );
                 })}
               </Pie>
-              <Tooltip formatter={(value: number) => [value, "Total"]} />
-              <Legend />
+              <Tooltip 
+                formatter={(value: number) => [value, "Total"]} 
+                contentStyle={{ borderRadius: '8px' }}
+              />
+              <Legend 
+                 // Formata a legenda para ficar mais clara se for numérica
+                 formatter={(value) => {
+                    // Se for número pequeno (1-5), assume que são estrelas
+                    if (!isNaN(Number(value)) && Number(value) <= 5) {
+                        return `${value} Estrelas`;
+                    }
+                    return value;
+                 }}
+              />
             </PieChart>
           </ResponsiveContainer>
         ) : (
