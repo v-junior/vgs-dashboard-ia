@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useMemo, useState } from 'react';
 import { Bot, Loader2, Download, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,7 @@ interface DashboardHeaderProps {
   setDateRange: (range: { start: string; end: string }) => void;
 }
 
-const WEBHOOK_URL = 'https://edt.digital-ai.tech/webhook-test/analise';
+const WEBHOOK_URL = 'https://webhook.digital-ai.tech/webhook/analise';
 
 export function DashboardHeader({ data, onAnalysisComplete, dateRange, setDateRange }: DashboardHeaderProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -77,7 +76,7 @@ export function DashboardHeader({ data, onAnalysisComplete, dateRange, setDateRa
       const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: JSON.stringify(data) }),
+        body: JSON.stringify({ content: JSON.stringify(data), metadata: { widgetCount: Array.isArray(data) ? data.length : 0 } }),
       });
       if (!response.ok) throw new Error('Erro na API');
       const result = await response.json();
