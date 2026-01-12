@@ -1,0 +1,105 @@
+{
+  "name": "n8n-Vilmar Junior Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "analise",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3b443ddc-62c8-40e6-a507-93dcd3dc121f",
+      "name": "Webhook",
+      "webhookId": "f9e6e26c-4ad8-4708-a419-aab68d410fb9"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Você é um analista de dados especialista.\nAnalise o JSON contendo dados de métricas de um aplicativo que segue abaixo.\nIdentifique 3 tendências, problemas ou insights importantes baseados nos números.\nResponda APENAS com uma lista formatada em HTML simples (<ul> e <li>), sem markdown, pronta para exibir num site.\n\nDados do JSON:\n{{ JSON.stringify($json.body.content) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c4de8f44-b87f-4259-8e53-5748b42b544a",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "rKNB9dkmEoyaC954",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"analise\": $json.content.parts[0].text } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        560,
+        0
+      ],
+      "id": "15a98dc4-0f38-42d9-9b7e-862b14c8f485",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2e444536-1dcb-407e-a72e-b8c1370729f9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33738330930e3881dd5571eca013f36ddf8aab20e4ea5c1f2ebaf4a2b4668ac6"
+  },
+  "id": "L24VbiL41UYsPGYY",
+  "tags": []
+}
