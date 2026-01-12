@@ -101,8 +101,10 @@ export function BarChartWidget({ widget }: BarChartWidgetProps) {
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
-            Aguardando dados...
+          <div className="flex h-full items-center justify-center text-muted-foreground text-center px-4">
+            {widget._filterActive && widget._noDataForRange
+              ? 'Sem dados no período selecionado. Ajuste ou limpe o filtro.'
+              : 'Aguardando dados...'}
           </div>
         )}
       </CardContent>

@@ -37,6 +37,7 @@ export interface BaseWidget {
   title: string;
   data: Record<string, unknown[]>;
   config?: WidgetConfig;
+  exampleData?: Record<string, unknown[]>;
 }
 
 export interface BigNumberWidget extends BaseWidget {

@@ -10,6 +10,8 @@ interface WidgetRendererProps {
 }
 
 export function WidgetRenderer({ widget }: WidgetRendererProps) {
+  const usedExampleData = (widget as any)?._usedExampleData || false;
+
   const renderWidget = () => {
     const kind = widget.kind || widget.config?.kind;
 
@@ -37,5 +39,19 @@ export function WidgetRenderer({ widget }: WidgetRendererProps) {
     }
   };
 
-  return renderWidget();
+  const widgetElement = renderWidget();
+
+  if (usedExampleData) {
+    return (
+      <div className="relative">
+        {widgetElement}
+        <div className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-amber-100/80 px-2 py-1 text-xs font-medium text-amber-800">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-600" />
+          Dados de exemplo
+        </div>
+      </div>
+    );
+  }
+
+  return widgetElement;
 }

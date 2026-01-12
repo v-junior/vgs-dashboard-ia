@@ -104,6 +104,3 @@ Qualidade / Engenharia
 Segurança / Operação
 - Assinatura/validação de token no webhook (evitar abuso do endpoint).
 - Rate limit / fila para lidar com picos de requisições ao modelo.
-
-Obrigado,
-Vilmar Junior
