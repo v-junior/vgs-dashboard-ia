@@ -127,16 +127,16 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1.2fr,1fr]">
-          <div className="rounded-2xl border bg-white/80 p-6 shadow-sm backdrop-blur-sm dark:bg-slate-900/70">
-            <h2 className="mb-2 text-lg font-semibold text-foreground">Upload de dados</h2>
-            <p className="mb-4 text-sm text-muted-foreground">Arraste múltiplos JSONs ou clique para selecionar. O parser aceita os arquivos fornecidos e monta os widgets automaticamente.</p>
-            <div className="print:hidden">
-              <FileUpload onFileLoad={handleFileLoad} />
+        <section className="grid gap-6">
+          <div className="mx-auto w-full max-w-3xl rounded-2xl border bg-white/80 p-6 shadow-sm backdrop-blur-sm dark:bg-slate-900/70">
+            <h2 className="mb-2 text-lg font-semibold text-foreground text-center">Upload de dados</h2>
+            <p className="mb-4 text-sm text-muted-foreground text-center">Arraste múltiplos JSONs ou clique para selecionar. O parser aceita os arquivos fornecidos e monta os widgets automaticamente.</p>
+            <div className="print:hidden flex justify-center">
+              <div className="w-full">
+                <FileUpload onFileLoad={handleFileLoad} />
+              </div>
             </div>
           </div>
-
-          
         </section>
 
         <DashboardHeader 
