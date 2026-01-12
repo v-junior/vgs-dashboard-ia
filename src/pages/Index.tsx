@@ -40,14 +40,19 @@ const Index = () => {
 
     return widgets.map(widget => {
       // 1. Extrai os dados originais
-      const originalData = extractWidgetData(widget.data);
-      if (!Array.isArray(originalData)) return widget;
+      const extracted = extractWidgetData(widget.data);
+      const hasRealData = Array.isArray(extracted) && extracted.length > 0;
+
+      // fallback para exampleData.appId quando não há dados reais
+      const exampleData = widget.exampleData && Array.isArray(widget.exampleData.appId) ? widget.exampleData.appId : [];
+      const dataSource = hasRealData ? extracted : exampleData;
+
+      if (!Array.isArray(dataSource)) return widget;
 
       // 2. Filtra os dados
-      const filteredData = originalData.filter((item: any) => {
-        // Tenta encontrar um campo de data
+      const filteredData = dataSource.filter((item: any) => {
         const dateValue = item.date || item.createdAt || item.formattedDate;
-        if (!dateValue) return true; // Se não tem data, não filtra (ex: tabela de keywords)
+        if (!dateValue) return true; // itens sem data são mantidos
 
         const itemDate = new Date(dateValue).getTime();
         const start = dateRange.start ? new Date(dateRange.start).getTime() : -Infinity;
@@ -56,14 +61,19 @@ const Index = () => {
         return itemDate >= start && itemDate <= end;
       });
 
-      // 3. Retorna o widget com os dados filtrados
-      // Precisamos manter a estrutura original "data: { br.com.bb... : [] }"
-      // Então reconstruímos o objeto data
+      // marcar se o filtro está ativo e se não há dados no intervalo
+      const filterActive = Boolean(dateRange.start || dateRange.end);
+      const noDataForRange = filterActive && Array.isArray(dataSource) && dataSource.length > 0 && filteredData.length === 0;
+
+      // 3. Reconstruir o objeto data mantendo a chave original quando possível
       const keys = Object.keys(widget.data || {});
       const mainKey = keys.length > 0 ? keys[0] : 'data';
-      
+
       return {
         ...widget,
+        _filterActive: filterActive,
+        _noDataForRange: noDataForRange,
+        _usedExampleData: !hasRealData && exampleData.length > 0,
         data: {
           [mainKey]: filteredData
         }
@@ -82,22 +92,16 @@ const Index = () => {
               <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">Desafio RankMyApp</p>
               <h1 className="text-3xl font-semibold text-foreground md:text-4xl">Dashboard de Analytics com IA</h1>
               <p className="max-w-2xl text-sm text-muted-foreground">
-                Suba os JSONs fornecidos (ex.: pagina-inteira.json), visualize gráficos automaticamente e peça insights de IA via webhook N8N. Exporte o que está na tela em PDF ou CSV.
+                Suba os JSONs fornecidos (ex.: pagina-inteira.json), visualize gráficos automaticamente e peça insights de IA via webhook N8N.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                 <span className="h-2 w-2 rounded-full bg-primary" /> Workflow N8N ativo
               </span>
-              <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-foreground">
-                JSONs de exemplo na pasta <span className="font-mono text-[11px]">/json</span>
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-foreground">
-                Exportar: PDF ou CSV
-              </span>
             </div>
           </div>
-
+          
           <div className="grid gap-4 border-t bg-muted/30 px-6 py-4 text-sm text-muted-foreground md:grid-cols-3">
             <div className="flex items-start gap-3">
               <div className="mt-1 h-2 w-2 rounded-full bg-primary" />
@@ -132,23 +136,7 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="rounded-2xl border bg-white/80 p-6 shadow-sm backdrop-blur-sm dark:bg-slate-900/70">
-            <h2 className="mb-2 text-lg font-semibold text-foreground">Fluxo de IA</h2>
-            <p className="text-sm text-muted-foreground">
-              Ao clicar em “Analisar com IA”, o dashboard envia o JSON para o webhook de produção do N8N e exibe o retorno já em HTML seguro no topo da página.
-            </p>
-            <div className="mt-4 grid gap-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-primary" /> Webhook: webhook.digital-ai.tech/webhook/analise
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-primary" /> Resposta esperada: campo analise/output/message
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-primary" /> Exportação: PDF (print) ou CSV dos widgets filtrados
-              </div>
-            </div>
-          </div>
+          
         </section>
 
         <DashboardHeader 
