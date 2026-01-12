@@ -105,3 +105,8 @@ Segurança / Operação
 - Assinatura/validação de token no webhook (evitar abuso do endpoint).
 - Rate limit / fila para lidar com picos de requisições ao modelo.
 
+<<<<<<< HEAD
+=======
+Obrigado,
+Vilmar Junior
+>>>>>>> 28b93cf34a642e163405a5f305730b2d72972f4e
